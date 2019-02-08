@@ -27,6 +27,7 @@
 #include <stdint.h>
 #include <iterator>
 #include <string>
+#include <bitset>
 #ifdef HAVE_MALLOC_INFO
 #include <malloc.h>
 #endif
@@ -77,6 +78,123 @@ public:
     }
 };
 #endif
+
+UniValue existsaddress(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() != 1)
+        throw std::runtime_error{
+            "existsaddress \"address\"\n"
+            "\nTest for the existence of the provided address.\n"
+            "\nArguments:\n"
+            "1. \"address\"     (string, required) The paicoin address to check\n"
+            "\nResult:\n"
+            "   Bool showing if address exists or not"
+            "\nExamples:\n"
+            + HelpExampleCli("existsaddress", "\"1PSSGeFHDnKNxiEyFrD1wcEaHr9hrQDDWc\"")
+            + HelpExampleRpc("existsaddress", "\"1PSSGeFHDnKNxiEyFrD1wcEaHr9hrQDDWc\"")
+        };
+
+    UniValue ret{UniValue::VBOOL};
+
+    //TODO add implementation
+
+    return ret;
+}
+
+UniValue existsaddresses(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() != 1)
+        throw std::runtime_error{
+            "existsaddresses \"addresses\"\n"
+            "\nTest for the existence of the provided addresses in the blockchain or memory pool.\n"
+            "\nArguments:\n"
+            "1. \"addresses\"     (array, required) The paicoin addresses to check\n"
+            "\nResult:\n"
+            "   Bitset of bools showing if addresses exist or not"
+            "\nExamples:\n"
+            + HelpExampleCli("existsaddresses", "'[{ \"address\": \"<my address>\" },"
+                                                  "{ \"address\": \"<my 2nd address>\" }]'")
+            + HelpExampleRpc("existsaddresses", "'[{ \"address\": \"<my address>\" },"
+                                                  "{ \"address\": \"<my 2nd address>\" }]'")
+        };
+
+    //TODO add implementation
+
+    //store bool results in a bitset
+    //convert bitset to char[]
+    //and use HexStr from utilstrencodings.h to Encode the char[] to hex
+    //then return it as string
+
+    UniValue ret{UniValue::VSTR, "00"};
+
+    return ret;
+}
+
+UniValue existsmempooltxs(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() != 1)
+        throw std::runtime_error{
+            "existsmempooltxs \"txhashblob\"\n"
+            "\nTest for the existence of the provided txs in the mempool.\n"
+            "\nArguments:\n"
+            "1. \"txhashblob\"     (string, required) Blob containing the hashes to check\n"
+            "\nResult:\n"
+            "   Bool blob showing if txs exist in the mempool or not"
+            "\nExamples:\n"
+            + HelpExampleCli("existsmempooltxs", "\"<txhashblob\">")
+            + HelpExampleRpc("existsmempooltxs", "\"<txhashblob\">")
+        };
+
+    //TODO add implementation
+
+    //store bool results in a bitset
+    //convert bitset to char[]
+    //and use HexStr from utilstrencodings.h to Encode the char[] to hex
+    //then return it as string
+
+    UniValue ret{UniValue::VSTR, "00"};
+
+    return ret;
+}
+
+UniValue searchrawtransactions(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() < 1 || request.params.size() > 7)
+        throw std::runtime_error{
+            "searchrawtransactions \"address\" ( \"verbose\" ) ( \"skip\" ) ( \"count\" ) ( \"vinextra\" ) ( \"reverse\" ) ( \"filteraddrs\" )\n\n"
+            "Returns raw data for transactions involving the passed address.\n"
+		    "Returned transactions are pulled from both the database, and transactions currently in the mempool.\n"
+		    "Transactions pulled from the mempool will have the 'confirmations' field set to 0.\n"
+		    "Usage of this RPC requires the optional --addrindex flag to be activated, otherwise all responses will simply return with an error stating the address index has not yet been built.\n"
+		    "Similarly, until the address index has caught up with the current best height, all requests will return an error response in order to avoid serving stale data."
+            "\nArguments:\n"
+            "1. \"address\"      (string, required) The PAIcoin address to search for\n"
+            "2. \"verbose\"= 0|1 (integer, optional, default=\"0\") Specifies the transaction is returned as a JSON object instead of hex-encoded string\n"
+            "3. \"skip\"         (integer, optional) The number of leading transactions to leave out of the final response\n"
+            "4. \"count\"        (integer, optional) The maximum number of transactions to return\n"
+            "5. \"vinextra\"     (string, optional) Specify that extra data from previous output will be returned in vin\n"
+            "6. \"reverse\"      (boolean, optional) Specifies that the transactions should be returned in reverse chronological order\n"
+            "7. \"filteraddrs\"  (array, optional) Address list. Only inputs or outputs with matching address will be returned\n"
+
+            "\nResult:\n"
+            "   Hex-encoded serialized transaction or JSON array object\n"
+
+            "\nExamples:\n"
+            + HelpExampleCli("searchrawtransactions", "\"<address\">")
+            + HelpExampleRpc("searchrawtransactions", "\"<address\">")
+        };
+
+    //TODO add implementation
+
+    //store bool results in a bitset
+    //convert bitset to char[]
+    //and use HexStr from utilstrencodings.h to Encode the char[] to hex
+    //then return it as string
+
+    UniValue ret{UniValue::VSTR, "00"};
+
+    return ret;
+}
 
 UniValue validateaddress(const JSONRPCRequest& request)
 {
@@ -564,6 +682,10 @@ static const CRPCCommand commands[] =
   //  --------------------- ------------------------  -----------------------  ----------
     { "control",            "getmemoryinfo",          &getmemoryinfo,          {"mode"} },
     { "util",               "validateaddress",        &validateaddress,        {"address"} }, /* uses wallet if enabled */
+    { "util",               "existsaddress",          &existsaddress,          {"address"} },
+    { "util",               "existsaddresses",        &existsaddresses,        {"addresses"} },
+    { "util",               "existsmempooltxs",       &existsmempooltxs,       {"txhashblob"} },
+    { "util",               "searchrawtransactions",  &searchrawtransactions,  {"address","verbose","skip","count","vinextra","reverse","filteraddrs"} },
     { "util",               "createmultisig",         &createmultisig,         {"nrequired","keys"} },
     { "util",               "verifymessage",          &verifymessage,          {"address","signature","message"} },
     { "util",               "signmessagewithprivkey", &signmessagewithprivkey, {"privkey","message"} },
