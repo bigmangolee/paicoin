@@ -157,45 +157,6 @@ UniValue existsmempooltxs(const JSONRPCRequest& request)
     return ret;
 }
 
-UniValue searchrawtransactions(const JSONRPCRequest& request)
-{
-    if (request.fHelp || request.params.size() < 1 || request.params.size() > 7)
-        throw std::runtime_error{
-            "searchrawtransactions \"address\" ( \"verbose\" ) ( \"skip\" ) ( \"count\" ) ( \"vinextra\" ) ( \"reverse\" ) ( \"filteraddrs\" )\n\n"
-            "Returns raw data for transactions involving the passed address.\n"
-		    "Returned transactions are pulled from both the database, and transactions currently in the mempool.\n"
-		    "Transactions pulled from the mempool will have the 'confirmations' field set to 0.\n"
-		    "Usage of this RPC requires the optional --addrindex flag to be activated, otherwise all responses will simply return with an error stating the address index has not yet been built.\n"
-		    "Similarly, until the address index has caught up with the current best height, all requests will return an error response in order to avoid serving stale data."
-            "\nArguments:\n"
-            "1. \"address\"      (string, required) The PAIcoin address to search for\n"
-            "2. \"verbose\"= 0|1 (integer, optional, default=\"0\") Specifies the transaction is returned as a JSON object instead of hex-encoded string\n"
-            "3. \"skip\"         (integer, optional) The number of leading transactions to leave out of the final response\n"
-            "4. \"count\"        (integer, optional) The maximum number of transactions to return\n"
-            "5. \"vinextra\"     (string, optional) Specify that extra data from previous output will be returned in vin\n"
-            "6. \"reverse\"      (boolean, optional) Specifies that the transactions should be returned in reverse chronological order\n"
-            "7. \"filteraddrs\"  (array, optional) Address list. Only inputs or outputs with matching address will be returned\n"
-
-            "\nResult:\n"
-            "   Hex-encoded serialized transaction or JSON array object\n"
-
-            "\nExamples:\n"
-            + HelpExampleCli("searchrawtransactions", "\"<address\">")
-            + HelpExampleRpc("searchrawtransactions", "\"<address\">")
-        };
-
-    //TODO add implementation
-
-    //store bool results in a bitset
-    //convert bitset to char[]
-    //and use HexStr from utilstrencodings.h to Encode the char[] to hex
-    //then return it as string
-
-    UniValue ret{UniValue::VSTR, "00"};
-
-    return ret;
-}
-
 UniValue validateaddress(const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() != 1)
@@ -685,7 +646,6 @@ static const CRPCCommand commands[] =
     { "util",               "existsaddress",          &existsaddress,          {"address"} },
     { "util",               "existsaddresses",        &existsaddresses,        {"addresses"} },
     { "util",               "existsmempooltxs",       &existsmempooltxs,       {"txhashblob"} },
-    { "util",               "searchrawtransactions",  &searchrawtransactions,  {"address","verbose","skip","count","vinextra","reverse","filteraddrs"} },
     { "util",               "createmultisig",         &createmultisig,         {"nrequired","keys"} },
     { "util",               "verifymessage",          &verifymessage,          {"address","signature","message"} },
     { "util",               "signmessagewithprivkey", &signmessagewithprivkey, {"privkey","message"} },
