@@ -23,12 +23,14 @@ static const char DB_COINS = 'c';
 static const char DB_BLOCK_FILES = 'f';
 static const char DB_TXINDEX = 't';
 static const char DB_BLOCK_INDEX = 'b';
+static const char DB_ADDR_INDEX = 'a';
 
 static const char DB_BEST_BLOCK = 'B';
 static const char DB_HEAD_BLOCKS = 'H';
 static const char DB_FLAG = 'F';
 static const char DB_REINDEX_FLAG = 'R';
 static const char DB_LAST_BLOCK = 'l';
+static const char DB_SALT = 'S';
 
 namespace {
 
@@ -148,9 +150,9 @@ size_t CCoinsViewDB::EstimateSize() const
 }
 
 CBlockTreeDB::CBlockTreeDB(size_t nCacheSize, bool fMemory, bool fWipe) : CDBWrapper(GetDataDir() / "blocks" / "index", nCacheSize, fMemory, fWipe) {
-    if (!Read('S', salt)) {
+    if (!Read(DB_SALT, salt)) {
         salt = GetRandHash();
-        Write('S', salt);
+        Write(DB_SALT, salt);
     }
 }
 
@@ -262,11 +264,11 @@ bool CBlockTreeDB::ReadAddrIndex(uint160 addrid, std::vector<CExtDiskTxPos> &lis
         lookupid = UintToArith256(ss.GetHash()).GetLow64();
     }
 
-    pcursor->Seek(std::make_pair('a', lookupid));
+    pcursor->Seek(std::make_pair(DB_ADDR_INDEX, lookupid));
 
     while (pcursor->Valid()) {
         std::pair<std::pair<char, uint64_t>, CExtDiskTxPos> key;
-        if (pcursor->GetKey(key) && key.first.first == 'a' && key.first.second == lookupid) {
+        if (pcursor->GetKey(key) && key.first.first == DB_ADDR_INDEX && key.first.second == lookupid) {
             list.push_back(key.second);
         } else {
             break;
@@ -279,11 +281,11 @@ bool CBlockTreeDB::ReadAddrIndex(uint160 addrid, std::vector<CExtDiskTxPos> &lis
 bool CBlockTreeDB::AddAddrIndex(const std::vector<std::pair<uint160, CExtDiskTxPos> > &list) {
     unsigned char foo[0];
     CDBBatch batch(*this);
-    for (std::vector<std::pair<uint160, CExtDiskTxPos> >::const_iterator it=list.begin(); it!=list.end(); it++) {
+    for (const auto& it : list ) {
         CHashWriter ss(SER_GETHASH, 0);
         ss << salt;
-        ss << it->first;
-        batch.Write(std::make_pair(std::make_pair('a', UintToArith256(ss.GetHash()).GetLow64()), it->second), FLATDATA(foo));
+        ss << it.first;
+        batch.Write(std::make_pair(std::make_pair(DB_ADDR_INDEX, UintToArith256(ss.GetHash()).GetLow64()), it.second), FLATDATA(foo));
     }
     return WriteBatch(batch, true);
 }
