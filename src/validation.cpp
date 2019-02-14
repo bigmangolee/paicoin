@@ -909,7 +909,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     return AcceptToMemoryPoolWithTime(chainparams, pool, state, tx, pfMissingInputs, GetTime(), plTxnReplaced, bypass_limits, nAbsurdFee);
 }
 
-bool ReadTransaction(CTransactionRef tx, const CDiskTxPos &pos, uint256 &hashBlock) {
+bool ReadTransaction(CTransactionRef& tx, const CDiskTxPos &pos, uint256 &hashBlock) {
     CAutoFile file(OpenBlockFile(pos, true), SER_DISK, CLIENT_VERSION);
     CBlockHeader header;
     try {

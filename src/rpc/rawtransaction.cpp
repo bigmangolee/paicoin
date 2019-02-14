@@ -173,12 +173,12 @@ UniValue searchrawtransactions(const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() < 1 || request.params.size() > 7)
         throw std::runtime_error{
-            "searchrawtransactions \"address\" ( \"verbose\" ) ( \"skip\" ) ( \"count\" ) ( \"vinextra\" ) ( \"reverse\" ) ( \"filteraddrs\" )\n\n"
-            "Returns raw data for transactions involving the passed address.\n"
+            "searchrawtransactions \"address\" ( \"verbose\" ) ( \"skip\" ) ( \"count\" ) ( \"vinextra\" ) ( \"reverse\" ) ( \"filteraddrs\" )\n"
+            "\nReturns raw data for transactions involving the passed address.\n"
 		    "Returned transactions are pulled from both the database, and transactions currently in the mempool.\n"
 		    "Transactions pulled from the mempool will have the 'confirmations' field set to 0.\n"
 		    "Usage of this RPC requires the optional --addrindex flag to be activated, otherwise all responses will simply return with an error stating the address index has not yet been built.\n"
-		    "Similarly, until the address index has caught up with the current best height, all requests will return an error response in order to avoid serving stale data."
+		    "Similarly, until the address index has caught up with the current best height, all requests will return an error response in order to avoid serving stale data.\n"
             "\nArguments:\n"
             "1. \"address\"      (string, required) The PAIcoin address to search for\n"
             "2. \"verbose\"= 0|1 (integer, optional, default=\"0\") Specifies the transaction is returned as a JSON object instead of hex-encoded string\n"
@@ -196,16 +196,58 @@ UniValue searchrawtransactions(const JSONRPCRequest& request)
             + HelpExampleRpc("searchrawtransactions", "\"<address\">")
         };
 
-    //TODO add implementation
+    if (!fAddrIndex)
+        throw JSONRPCError(RPCErrorCode::MISC_ERROR, "Address index not enabled");
 
-    //store bool results in a bitset
-    //convert bitset to char[]
-    //and use HexStr from utilstrencodings.h to Encode the char[] to hex
-    //then return it as string
+    const auto& name_ = request.params[0].get_str();
+    CTxDestination destination = DecodeDestination(name_);
+    if (!IsValidDestination(destination))
+        throw JSONRPCError(RPCErrorCode::INVALID_ADDRESS_OR_KEY, std::string("Invalid PAIcoin address: ") + name_);
 
-    UniValue ret{UniValue::VSTR, "00"};
+    std::set<CExtDiskTxPos> setpos;
+    if (!FindTransactionsByDestination(destination, setpos))
+        throw JSONRPCError(RPCErrorCode::DATABASE_ERROR, "Cannot search for address");
 
-    return ret;
+    int nSkip     = 0;
+    int nCount    = 100;
+    bool fVerbose = true;
+    if (request.params.size() > 1)
+        fVerbose = (request.params[1].get_int() != 0);
+    if (request.params.size() > 2)
+        nSkip = request.params[2].get_int();
+    if (request.params.size() > 3)
+        nCount = request.params[3].get_int();
+
+    if (nSkip < 0)
+        nSkip += setpos.size();
+    if (nSkip < 0)
+        nSkip = 0;
+    if (nCount < 0)
+        nCount = 0;
+
+    std::set<CExtDiskTxPos>::const_iterator it = setpos.begin();
+    while (it != setpos.end() && nSkip--) it++;
+
+    UniValue result(UniValue::VARR);
+    while (it != setpos.end() && nCount--) {
+        CTransactionRef tx;
+        uint256 hashBlock;
+        if (!ReadTransaction(tx, *it, hashBlock))
+            throw JSONRPCError(RPCErrorCode::DESERIALIZATION_ERROR, "Cannot read transaction from disk");
+        CDataStream ssTx(SER_NETWORK, PROTOCOL_VERSION);
+        ssTx << tx;
+        std::string strHex = HexStr(ssTx.begin(), ssTx.end());
+        if (fVerbose) {
+            UniValue object(UniValue::VOBJ);
+            TxToJSON(*tx, hashBlock, object);
+            object.push_back(Pair("hex", strHex));
+            result.push_back(object);
+        } else {
+            result.push_back(strHex);
+        }
+        it++;
+    }
+    return result;
 }
 
 UniValue gettxoutproof(const JSONRPCRequest& request)
