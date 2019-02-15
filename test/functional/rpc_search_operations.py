@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python3
 # Copyright (c) 2019 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
@@ -51,15 +50,12 @@ class SearchOperations(PAIcoinTestFramework):
 
         # searchrawtransactions tests:
         # 1. valid parameters
-        x = self.nodes[0].searchrawtransactions('TsfDLrRkk9ciUuwfp2b8PawwnukYD7yAjGd')
-        assert(x == "00")
-        #TODO add check for an existing address once the command is implemented properly
-        x = self.nodes[0].searchrawtransactions("address","verbose","skip","count","vinextra","reverse","filteraddrs")
-        assert(x == "00")
+        assert_raises_rpc_error(-1, "Address index not enabled", self.nodes[0].searchrawtransactions,'TsfDLrRkk9ciUuwfp2b8PawwnukYD7yAjGd')
+        # see more valid tests in SearchRawTransactionsTest, this setup has no "addrindex" flag
 
         # 2. invalid parameters
         assert_raises_rpc_error(-1, None, self.nodes[0].searchrawtransactions)
         assert_raises_rpc_error(-1, None, self.nodes[0].searchrawtransactions,"address","verbose","skip","count","vinextra","reverse","filteraddrs","unknown_param")
-    
+
 if __name__ == "__main__":
     SearchOperations().main()
