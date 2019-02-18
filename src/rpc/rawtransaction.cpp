@@ -184,7 +184,7 @@ UniValue searchrawtransactions(const JSONRPCRequest& request)
             "2. \"verbose\"= 0|1 (integer, optional, default=\"0\") Specifies the transaction is returned as a JSON object instead of hex-encoded string\n"
             "3. \"skip\"         (integer, optional) The number of leading transactions to leave out of the final response\n"
             "4. \"count\"        (integer, optional) The maximum number of transactions to return\n"
-            "5. \"vinextra\"     (string, optional) Specify that extra data from previous output will be returned in vin\n"
+            "5. \"vinextra\"     (boolean, optional) Specify that extra data from previous output will be returned in vin (--txindex is required)\n"
             "6. \"reverse\"      (boolean, optional) Specifies that the transactions should be returned in reverse chronological order\n"
             "7. \"filteraddrs\"  (array, optional) Address list. Only inputs or outputs with matching address will be returned\n"
 
@@ -199,6 +199,29 @@ UniValue searchrawtransactions(const JSONRPCRequest& request)
     if (!fAddrIndex)
         throw JSONRPCError(RPCErrorCode::MISC_ERROR, "Address index not enabled");
 
+    int nSkip     = 0;
+    int nCount    = 100;
+    bool fVerbose = false;
+    bool fVinExtra = false;
+    bool fReverse = false;
+    UniValue aFilterAddrs;
+
+    if (request.params.size() > 1)
+        fVerbose = (request.params[1].get_int() != 0);
+    if (request.params.size() > 2)
+        nSkip = request.params[2].get_int();
+    if (request.params.size() > 3)
+        nCount = request.params[3].get_int();
+    if (request.params.size() > 4)
+        fVinExtra = request.params[4].get_bool();
+    if (request.params.size() > 5)
+        fReverse = request.params[5].get_bool();
+    if (request.params.size() > 6)
+        aFilterAddrs = request.params[6].get_array();
+    
+    if (fVinExtra && !fTxIndex)
+        throw JSONRPCError(RPCErrorCode::MISC_ERROR, "Transaction index not enabled");
+
     const auto& name_ = request.params[0].get_str();
     CTxDestination destination = DecodeDestination(name_);
     if (!IsValidDestination(destination))
@@ -208,25 +231,16 @@ UniValue searchrawtransactions(const JSONRPCRequest& request)
     if (!FindTransactionsByDestination(destination, setpos))
         throw JSONRPCError(RPCErrorCode::DATABASE_ERROR, "Cannot search for address");
 
-    int nSkip     = 0;
-    int nCount    = 100;
-    bool fVerbose = true;
-    if (request.params.size() > 1)
-        fVerbose = (request.params[1].get_int() != 0);
-    if (request.params.size() > 2)
-        nSkip = request.params[2].get_int();
-    if (request.params.size() > 3)
-        nCount = request.params[3].get_int();
-
     if (nSkip < 0)
         nSkip += setpos.size();
     if (nSkip < 0)
         nSkip = 0;
     if (nCount < 0)
         nCount = 0;
+    
+    auto it = setpos.cbegin();
 
-    std::set<CExtDiskTxPos>::const_iterator it = setpos.begin();
-    while (it != setpos.end() && nSkip--) it++;
+    while (it != setpos.end() && nSkip--) ++it;
 
     UniValue result(UniValue::VARR);
     while (it != setpos.end() && nCount--) {
@@ -245,8 +259,16 @@ UniValue searchrawtransactions(const JSONRPCRequest& request)
         } else {
             result.push_back(strHex);
         }
-        it++;
+        ++it;
     }
+
+    if (fReverse){
+        UniValue reversed_result(UniValue::VARR);
+        for (auto i = result.size(); i!= 0; --i)
+            reversed_result.push_back(result[i-1]);
+        return reversed_result;
+    }
+
     return result;
 }
 
