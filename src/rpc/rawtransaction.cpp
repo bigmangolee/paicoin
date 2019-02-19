@@ -35,14 +35,27 @@
 #include <univalue.h>
 
 
-void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
+void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry, bool bVinExtra = false)
 {
+    const CTransaction * pPrevTx = nullptr;
+    CTransactionRef prevTxVin;
+    if (bVinExtra && !tx.IsCoinBase()) {
+        assert(tx.vin.size() == 1);
+        const CTxIn& txin = tx.vin[0];
+
+        uint256 hashBlock;
+        if (GetTransaction(txin.prevout.hash, prevTxVin, Params().GetConsensus(), hashBlock, true)) {
+            assert (prevTxVin);
+            pPrevTx = prevTxVin.get();
+        }
+    }
+
     // Call into TxToUniv() in paicoin-common to decode the transaction hex.
     //
     // Blockchain contextual information (confirmations and blocktime) is not
     // available to code in paicoin-common, so we query them here and push the
     // data into the returned UniValue.
-    TxToUniv(tx, uint256(), entry, true, RPCSerializationFlags());
+    TxToUniv(tx, uint256(), entry, true, RPCSerializationFlags(), pPrevTx);
 
     if (!hashBlock.IsNull()) {
         entry.push_back(Pair("blockhash", hashBlock.GetHex()));
@@ -253,7 +266,7 @@ UniValue searchrawtransactions(const JSONRPCRequest& request)
         std::string strHex = HexStr(ssTx.begin(), ssTx.end());
         if (fVerbose) {
             UniValue object(UniValue::VOBJ);
-            TxToJSON(*tx, hashBlock, object);
+            TxToJSON(*tx, hashBlock, object, fVinExtra);
             object.push_back(Pair("hex", strHex));
             result.push_back(object);
         } else {
