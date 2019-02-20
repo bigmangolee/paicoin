@@ -21,6 +21,12 @@ class SearchRawTransactionsTest(PAIcoinTestFramework):
     def logBalance(self):
         self.log.info([ self.nodes[i].getbalance() for i in range(self.num_nodes)])
 
+    def sendandgenerate(self, address, amount):
+        txid = self.nodes[0].sendtoaddress(address,amount)
+        self.nodes[0].generate(1)
+        self.sync_all()
+        return txid
+
     def run_test(self):
         #prepare
         self.nodes[0].generate(101)
@@ -28,20 +34,12 @@ class SearchRawTransactionsTest(PAIcoinTestFramework):
         self.nodes[1].generate(1)
         self.sync_all()
 
-        self.logBalance()
-
         addrs = [ self.nodes[n].getnewaddress() for n in range(self.num_nodes) ]
         self.log.info(addrs)
 
-        txids = [ self.nodes[0].sendtoaddress(addrs[1],i) for i in range(1,21) ]
+        txids = [ self.sendandgenerate(addrs[1],i) for i in range(1,21) ]
         rawTxs = [ self.nodes[0].getrawtransaction(txid) for txid in txids ]
         decRawTxs = [ self.nodes[0].decoderawtransaction(rawTx) for rawTx in rawTxs ]
-
-        self.sync_all()
-        self.nodes[0].generate(1)
-        self.sync_all()
-
-        self.logBalance()
 
         res = self.nodes[0].searchrawtransactions(addrs[1], 1, 0)
         assert_equal(len(res), len(txids))
