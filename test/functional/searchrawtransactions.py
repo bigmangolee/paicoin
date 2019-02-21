@@ -12,14 +12,39 @@
 from test_framework.test_framework import PAIcoinTestFramework
 from test_framework.util import *
 
+def checkResultAgainstDecodedRawTx(resultTx, decodedRawTx, prevDecodedTxs = None):
+    # check several attributes to be as in our decoded element
+    assert_equal(resultTx["txid"],     decodedRawTx["txid"])
+    assert_equal(resultTx["version"],  decodedRawTx["version"])
+    assert_equal(resultTx["size"],     decodedRawTx["size"])
+    assert_equal(resultTx["locktime"], decodedRawTx["locktime"])
+    assert_equal(resultTx["vout"],     decodedRawTx["vout"])
+    if (prevDecodedTxs == None):
+        assert_equal(resultTx["vin"],  decodedRawTx["vin"])
+    else:
+        assert_equal(len(resultTx["vin"]),  len(decodedRawTx["vin"]))
+        # add prevOut to the one in decoded to able to check everything else in vin
+        addedPrevOut = [vin for vin in decodedRawTx["vin"]]
+        for i in range(len(addedPrevOut)):
+            addedPrevOut[i]["prevOut"] = resultTx["vin"][i]["prevOut"] 
+        assert_equal(resultTx["vin"],  addedPrevOut)
+
+        # check prevOut
+        assert_equal(len(resultTx["vin"]),  len(prevDecodedTxs))
+        for i in range(len(prevDecodedTxs)):
+            resPrevOut = resultTx["vin"][i]["prevOut"]
+            prevOut = prevDecodedTxs[i]["vout"]
+            assert_equal(len(resPrevOut), len(prevOut))
+            for j in range(len(prevOut)):
+                assert_equal(resPrevOut[j]["value"], prevOut[j]["value"])
+                assert_equal(resPrevOut[j]["addresses"], prevOut[j]["scriptPubKey"]["addresses"])
+
 class SearchRawTransactionsTest(PAIcoinTestFramework):
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 2
-        self.extra_args = [['-addrindex'],[]]
-
-    def logBalance(self):
-        self.log.info([ self.nodes[i].getbalance() for i in range(self.num_nodes)])
+        # only first node has txindex to be able to test cases when it is required
+        self.extra_args = [['-addrindex','-txindex'],['-addrindex']] 
 
     def sendandgenerate(self, address, amount):
         txid = self.nodes[0].sendtoaddress(address,amount)
@@ -41,31 +66,61 @@ class SearchRawTransactionsTest(PAIcoinTestFramework):
         rawTxs = [ self.nodes[0].getrawtransaction(txid) for txid in txids ]
         decRawTxs = [ self.nodes[0].decoderawtransaction(rawTx) for rawTx in rawTxs ]
 
-        res = self.nodes[0].searchrawtransactions(addrs[1], 1, 0)
+        #################
+        # Verbose tests #
+        #################
+        verbose = 1
+        res = self.nodes[0].searchrawtransactions(addrs[1], verbose)
         assert_equal(len(res), len(txids))
 
-        res = self.nodes[0].searchrawtransactions(addrs[1], 1, 5, 2)
+        res = self.nodes[0].searchrawtransactions(addrs[1], verbose, 5, 2)
         assert_equal(len(res), 2)
 
-        res = self.nodes[0].searchrawtransactions(addrs[1], 1, 19, 1)
+        # check one skip zero
+        res = self.nodes[0].searchrawtransactions(addrs[1], verbose, 0, 1)
+        assert_equal(len(res), 1)
+        # check if it returns the same txid as in our list 
+        assert_equal(res[0]["txid"], txids[0])
+        checkResultAgainstDecodedRawTx(res[0],decRawTxs[0])
+
+        # check one skip rest
+        res = self.nodes[0].searchrawtransactions(addrs[1], verbose, 19, 1)
         assert_equal(len(res), 1)
         # check if it returns the same txid as in our list 
         assert_equal(res[0]["txid"], txids[-1])
-        # check several attributes to be as in our decoded element
-        assert_equal(res[0]["txid"], decRawTxs[-1]["txid"])
-        assert_equal(res[0]["version"], decRawTxs[-1]["version"])
-        assert_equal(res[0]["size"], decRawTxs[-1]["size"])
-        assert_equal(res[0]["locktime"], decRawTxs[-1]["locktime"])
-        assert_equal(res[0]["vin"], decRawTxs[-1]["vin"])
-        assert_equal(res[0]["vout"], decRawTxs[-1]["vout"])
-        
-        res = self.nodes[0].searchrawtransactions(addrs[1], 0, 2, 2)
+        checkResultAgainstDecodedRawTx(res[0],decRawTxs[-1])
+
+        # check with vinextra
+        assert_raises_rpc_error(-1, "Transaction index not enabled", self.nodes[1].searchrawtransactions, addrs[1], verbose, 19, 1, True)
+
+        res = self.nodes[0].searchrawtransactions(addrs[1], verbose, 19, 1, True)
+        assert_equal(len(res), 1)
+        # check if it returns the same txid as in our list 
+        assert_equal(res[0]["txid"], txids[-1])
+        checkResultAgainstDecodedRawTx(res[0],decRawTxs[-1], [decRawTxs[-2]])
+
+        #####################
+        # Non-verbose tests #
+        #####################
+        verbose = 0
+        res = self.nodes[0].searchrawtransactions(addrs[1], verbose, 2, 2)
         assert_equal(len(res), 2)
 
-        res = self.nodes[0].searchrawtransactions(addrs[1], 0, 2)
+        res = self.nodes[0].searchrawtransactions(addrs[1], verbose, 2)
         assert_equal(len(res), 18)
 
-        res = self.nodes[0].searchrawtransactions(addrs[1], 0, 19, 1)
+        # check one skip zero
+        res = self.nodes[0].searchrawtransactions(addrs[1], verbose, 0, 1)
+        assert_equal(len(res), 1)
+        assert_equal(res[0], rawTxs[0])
+
+        # check one skip rest
+        res = self.nodes[0].searchrawtransactions(addrs[1], verbose, 19, 1)
+        assert_equal(len(res), 1)
+        assert_equal(res[0], rawTxs[-1])
+
+        # check with vinextra [ disregarded when not verbose]
+        res = self.nodes[0].searchrawtransactions(addrs[1], verbose, 19, 1, True)
         assert_equal(len(res), 1)
         assert_equal(res[0], rawTxs[-1])
 
