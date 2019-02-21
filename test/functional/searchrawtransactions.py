@@ -38,6 +38,10 @@ def checkResultAgainstDecodedRawTx(resultTx, decodedRawTx, prevDecodedTxs = None
             for j in range(len(prevOut)):
                 assert_equal(resPrevOut[j]["value"], prevOut[j]["value"])
                 assert_equal(resPrevOut[j]["addresses"], prevOut[j]["scriptPubKey"]["addresses"])
+    
+def getSendingAddress(decRawTxs, index):
+    addr = [vout["scriptPubKey"]["addresses"] for vout in decRawTxs[index]["vout"] if vout["value"] == Decimal(index+1)]
+    return addr[0]
 
 class SearchRawTransactionsTest(PAIcoinTestFramework):
     def set_test_params(self):
@@ -81,14 +85,14 @@ class SearchRawTransactionsTest(PAIcoinTestFramework):
         assert_equal(len(res), 1)
         # check if it returns the same txid as in our list 
         assert_equal(res[0]["txid"], txids[0])
-        checkResultAgainstDecodedRawTx(res[0],decRawTxs[0])
+        checkResultAgainstDecodedRawTx(res[0], decRawTxs[0])
 
         # check one skip rest
         res = self.nodes[0].searchrawtransactions(addrs[1], verbose, 19, 1)
         assert_equal(len(res), 1)
         # check if it returns the same txid as in our list 
         assert_equal(res[0]["txid"], txids[-1])
-        checkResultAgainstDecodedRawTx(res[0],decRawTxs[-1])
+        checkResultAgainstDecodedRawTx(res[0], decRawTxs[-1])
 
         # check with vinextra
         assert_raises_rpc_error(-1, "Transaction index not enabled", self.nodes[1].searchrawtransactions, addrs[1], verbose, 19, 1, True)
@@ -97,7 +101,25 @@ class SearchRawTransactionsTest(PAIcoinTestFramework):
         assert_equal(len(res), 1)
         # check if it returns the same txid as in our list 
         assert_equal(res[0]["txid"], txids[-1])
-        checkResultAgainstDecodedRawTx(res[0],decRawTxs[-1], [decRawTxs[-2]])
+        checkResultAgainstDecodedRawTx(res[0], decRawTxs[-1], [decRawTxs[-2]])
+
+        # check reverse
+        res = self.nodes[0].searchrawtransactions(addrs[1], verbose, 0, 5, False, False)
+        reversed_res = self.nodes[0].searchrawtransactions(addrs[1], verbose, 0, 5, False, True)
+        assert_equal(res, list(reversed(reversed_res)))
+        
+        # check filteraddrs
+        assert_raises_rpc_error(-1, "Transaction index not enabled", self.nodes[1].searchrawtransactions, addrs[1], verbose, 19, 1, False, False, [addrs[0]])
+
+        sending_addr1 = getSendingAddress(decRawTxs, 7)
+        sending_addr2 = getSendingAddress(decRawTxs, 9)
+        assert_equal(sending_addr1, sending_addr2)
+        res = self.nodes[0].searchrawtransactions(addrs[1], verbose, 0, 100, False, False, sending_addr1)
+        # all transactions sent from the same address
+        assert_equal(len(res), len(txids))
+
+        res = self.nodes[0].searchrawtransactions(addrs[1], verbose, 0, 100, False, False, [addrs[0]])
+        assert_equal(len(res), 0)
 
         #####################
         # Non-verbose tests #
@@ -119,10 +141,19 @@ class SearchRawTransactionsTest(PAIcoinTestFramework):
         assert_equal(len(res), 1)
         assert_equal(res[0], rawTxs[-1])
 
-        # check with vinextra [ disregarded when not verbose]
+        # check with vinextra [ disregarded when not verbose ]
         res = self.nodes[0].searchrawtransactions(addrs[1], verbose, 19, 1, True)
         assert_equal(len(res), 1)
         assert_equal(res[0], rawTxs[-1])
+
+        # check reverse
+        res = self.nodes[0].searchrawtransactions(addrs[1], verbose, 0, 5, False, False)
+        reversed_res = self.nodes[0].searchrawtransactions(addrs[1], verbose, 0, 5, False, True)
+        assert_equal(res, list(reversed(reversed_res)))
+
+        # check filteraddrs [ disregarded when not verbose ]
+        res = self.nodes[0].searchrawtransactions(addrs[1], verbose, 0, 100, False, False, [addrs[0]])
+        assert_equal(res, rawTxs)
 
 if __name__ == "__main__":
     SearchRawTransactionsTest().main()
