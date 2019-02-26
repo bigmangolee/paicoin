@@ -711,7 +711,7 @@ UniValue submitblock(const JSONRPCRequest& request)
             "\nAttempts to submit new block to network.\n"
             "See https://en.paicoin.it/wiki/BIP_0022 for full specification.\n"
 
-            "\nArguments\n"
+            "\nArguments:\n"
             "1. \"hexdata\"        (string, required) the hex-encoded block data to submit\n"
             "2. \"dummy\"          (optional) dummy value, for compatibility with BIP22. This value is ignored.\n"
             "\nResult:\n"
@@ -770,6 +770,100 @@ UniValue submitblock(const JSONRPCRequest& request)
         return "inconclusive";
     }
     return BIP22ValidationResult(sc.state);
+}
+
+UniValue existsexpiredtickets(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() != 1) 
+        throw std::runtime_error{
+            "existsexpiredtickets \"txhashblob\"\n"
+            "\nTest for the existence of the provided tickets in the expired ticket map.\n"
+
+            "\nArguments:\n"
+            "1. \"txhashblob\"  (string, required)  Blob containing the hashes to check\n"
+            "\nResult:\n"
+            "   \"value\"       (string)            Bool blob showing if ticket exists in the expired ticket database or not\n"
+            "\nExamples:\n"
+            + HelpExampleCli("existsexpiredtickets", "\"txhashblob\"")
+            + HelpExampleRpc("existsexpiredtickets", "\"txhashblob\"")
+        };
+
+    return UniValue(UniValue::VSTR);
+}
+
+UniValue existsliveticket(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() != 1) 
+        throw std::runtime_error{
+            "existsliveticket \"txhash\"\n"
+            "\nTest for the existence of the provided ticket.\n"
+
+            "\nArguments:\n"
+            "1. \"txhash\"  (string, required)  The ticket hash to check\n"
+            "\nResult:\n"
+            "   true|false  (boolean)           Bool showing if address exists in the live ticket database or not\n"
+            "\nExamples:\n"
+            + HelpExampleCli("existsliveticket", "\"txhash\"")
+            + HelpExampleRpc("existsliveticket", "\"txhash\"")
+        };
+
+    return UniValue(UniValue::VBOOL);
+}
+
+UniValue existslivetickets(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() != 1) 
+        throw std::runtime_error{
+            "existslivetickets \"txhashblob\"\n"
+            "\nTest for the existence of the provided tickets in the live ticket map.\n"
+
+            "\nArguments:\n"
+            "1. \"txhashblob\"  (string, required)  Blob containing the hashes to check\n"
+            "\nResult:\n"
+            "   \"value\"       (string)            Bool blob showing if ticket exists in the live ticket database or not\n"
+            "\nExamples:\n"
+            + HelpExampleCli("existslivetickets", "\"txhashblob\"")
+            + HelpExampleRpc("existslivetickets", "\"txhashblob\"")
+        };
+
+    return UniValue(UniValue::VSTR);
+}
+
+UniValue existsmissedtickets(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() != 1) 
+        throw std::runtime_error{
+            "existsmissedtickets \"txhashblob\"\n"
+            "\nTest for the existence of the provided tickets in the missed ticket map.\n"
+
+            "\nArguments:\n"
+            "1. \"txhashblob\"  (string, required)  Blob containing the hashes to check\n"
+            "\nResult:\n"
+            "   \"value\"       (string)            Bool blob showing if the ticket exists in the missed ticket database or not\n"
+            "\nExamples:\n"
+            + HelpExampleCli("existsmissedtickets", "\"txhashblob\"")
+            + HelpExampleRpc("existsmissedtickets", "\"txhashblob\"")
+        };
+
+    return UniValue(UniValue::VSTR);
+}
+
+UniValue getticketpoolvalue(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() != 0) 
+        throw std::runtime_error{
+            "getticketpoolvalue\n"
+            "\nReturn the current value of all locked funds in the ticket pool.\n"
+
+            "\nArguments:\n"
+            "\nResult:\n"
+            "   n.nnn (numeric) Total value of ticket pool\n"
+            "\nExamples:\n"
+            + HelpExampleCli("getticketpoolvalue", "")
+            + HelpExampleRpc("getticketpoolvalue", "")
+        };
+
+    return UniValue(UniValue::VNUM);
 }
 
 UniValue estimatefee(const JSONRPCRequest& request)
@@ -983,6 +1077,11 @@ static const CRPCCommand commands[] =
     { "mining",             "getblocktemplate",       &getblocktemplate,       {"template_request"} },
     { "mining",             "submitblock",            &submitblock,            {"hexdata","dummy"} },
 
+    { "mining",             "existsexpiredtickets",   &existsexpiredtickets,   {"txhashblob"} },
+    { "mining",             "existsliveticket",       &existsliveticket,       {"txhash"} },
+    { "mining",             "existsmissedtickets",    &existsmissedtickets,    {"txhashblob"} },
+    { "mining",             "existslivetickets",      &existslivetickets,      {"txhashblob"} },
+    { "mining",             "getticketpoolvalue",     &getticketpoolvalue,     {} },
 
     { "generating",         "generatetoaddress",      &generatetoaddress,      {"nblocks","address","maxtries"} },
 
