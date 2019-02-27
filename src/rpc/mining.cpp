@@ -778,7 +778,6 @@ UniValue existsexpiredtickets(const JSONRPCRequest& request)
         throw std::runtime_error{
             "existsexpiredtickets \"txhashblob\"\n"
             "\nTest for the existence of the provided tickets in the expired ticket map.\n"
-
             "\nArguments:\n"
             "1. \"txhashblob\"  (string, required)  Blob containing the hashes to check\n"
             "\nResult:\n"
@@ -797,7 +796,6 @@ UniValue existsliveticket(const JSONRPCRequest& request)
         throw std::runtime_error{
             "existsliveticket \"txhash\"\n"
             "\nTest for the existence of the provided ticket.\n"
-
             "\nArguments:\n"
             "1. \"txhash\"  (string, required)  The ticket hash to check\n"
             "\nResult:\n"
@@ -816,7 +814,6 @@ UniValue existslivetickets(const JSONRPCRequest& request)
         throw std::runtime_error{
             "existslivetickets \"txhashblob\"\n"
             "\nTest for the existence of the provided tickets in the live ticket map.\n"
-
             "\nArguments:\n"
             "1. \"txhashblob\"  (string, required)  Blob containing the hashes to check\n"
             "\nResult:\n"
@@ -835,7 +832,6 @@ UniValue existsmissedtickets(const JSONRPCRequest& request)
         throw std::runtime_error{
             "existsmissedtickets \"txhashblob\"\n"
             "\nTest for the existence of the provided tickets in the missed ticket map.\n"
-
             "\nArguments:\n"
             "1. \"txhashblob\"  (string, required)  Blob containing the hashes to check\n"
             "\nResult:\n"
@@ -854,13 +850,133 @@ UniValue getticketpoolvalue(const JSONRPCRequest& request)
         throw std::runtime_error{
             "getticketpoolvalue\n"
             "\nReturn the current value of all locked funds in the ticket pool.\n"
-
-            "\nArguments:\n"
             "\nResult:\n"
             "   n.nnn (numeric) Total value of ticket pool\n"
             "\nExamples:\n"
             + HelpExampleCli("getticketpoolvalue", "")
             + HelpExampleRpc("getticketpoolvalue", "")
+        };
+
+    return ValueFromAmount(0);
+}
+
+UniValue livetickets(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() != 0) 
+        throw std::runtime_error{
+            "livetickets\n"
+            "\nRequest tickets the live ticket hashes from the ticket database\n"
+            "\nResult:\n"
+            "{\n"
+            "   \"tickets\": [\"value\",...], (array of string) List of live tickets\n"
+            "}\n" 
+            "\nExamples:\n"
+            + HelpExampleCli("livetickets", "")
+            + HelpExampleRpc("livetickets", "")
+        };
+
+    return UniValue(UniValue::VOBJ);
+}
+
+UniValue missedtickets(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() != 0) 
+        throw std::runtime_error{
+            "missedtickets\n"
+            "\nRequest tickets the client missed\n"
+            "\nResult:\n"
+            "{\n"
+            "   \"tickets\": [\"value\",...], (array of string) List of missed tickets\n"
+            "}\n" 
+            "\nExamples:\n"
+            + HelpExampleCli("missedtickets", "")
+            + HelpExampleRpc("missedtickets", "")
+        };
+
+    return UniValue(UniValue::VOBJ);
+}
+
+UniValue ticketfeeinfo(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() > 2) 
+        throw std::runtime_error{
+            "ticketfeeinfo (blocks windows)\n"
+            "\nGet various information about ticket fees from the mempool, blocks, and difficulty windows (units: PAI/kB)\n"
+            "\nArguments:\n"
+            "1. blocks  (numeric, optional) The number of blocks, starting from the chain tip and descending, to return fee information about\n"
+            "2. windows (numeric, optional) The number of difficulty windows to return ticket fee information about\n"
+            "\nResult:\n"
+            "{\n"
+            "   \"feeinfomempool\": {   (object)          Ticket fee information for all tickets in the mempool (units: PAI/kB)\n"
+            "   \"number\": n,          (numeric)         Number of transactions in the mempool\n"
+            "   \"min\": n.nnn,         (numeric)         Minimum transaction fee in the mempool\n"
+            "   \"max\": n.nnn,         (numeric)         Maximum transaction fee in the mempool\n"
+            "   \"mean\": n.nnn,        (numeric)         Mean of transaction fees in the mempool\n"
+            "   \"median\": n.nnn,      (numeric)         Median of transaction fees in the mempool\n"
+            "   \"stddev\": n.nnn,      (numeric)         Standard deviation of transaction fees in the mempool\n"
+            "   },\n"
+            "   \"feeinfoblocks\": [{   (array of object) Ticket fee information for a given list of blocks descending from the chain tip (units: PAI/kB)\n"
+            "   \"height\": n,          (numeric)         Height of the block\n"
+            "   \"number\": n,          (numeric)         Number of transactions in the block\n"
+            "   \"min\": n.nnn,         (numeric)         Minimum transaction fee in the block\n"
+            "   \"max\": n.nnn,         (numeric)         Maximum transaction fee in the block\n"
+            "   \"mean\": n.nnn,        (numeric)         Mean of transaction fees in the block\n"
+            "   \"median\": n.nnn,      (numeric)         Median of transaction fees in the block\n"
+            "   \"stddev\": n.nnn,      (numeric)         Standard deviation of transaction fees in the block\n"
+            "   },...],\n"
+            "   \"feeinfowindows\": [{  (array of object) Ticket fee information for a window period where the stake difficulty was the same (units: PAI/kB)\n"
+            "   \"startheight\": n,     (numeric)         First block in the window (inclusive)\n"
+            "   \"endheight\": n,       (numeric)         Last block in the window (exclusive)\n"
+            "   \"number\": n,          (numeric)         Number of transactions in the window\n"
+            "   \"min\": n.nnn,         (numeric)         Minimum transaction fee in the window\n"
+            "   \"max\": n.nnn,         (numeric)         Maximum transaction fee in the window\n"
+            "   \"mean\": n.nnn,        (numeric)         Mean of transaction fees in the window\n"
+            "   \"median\": n.nnn,      (numeric)         Median of transaction fees in the window\n"
+            "   \"stddev\": n.nnn,      (numeric)         Standard deviation of transaction fees in the window\n"
+            "   },...],\n"
+            "}\n"  
+            "\nExamples:\n"
+            + HelpExampleCli("ticketfeeinfo", "5 3")
+            + HelpExampleRpc("ticketfeeinfo", "5 3")
+        };
+
+    return UniValue(UniValue::VOBJ);
+}
+
+UniValue ticketsforaddress(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() != 1) 
+        throw std::runtime_error{
+            "ticketsforaddress \"address\"\n"
+            "\nRequest all the tickets for an address.\n"
+            "\nArguments:\n"
+            "1. address (string, required) Address to look for.\n"
+            "\nResult:\n"
+            "{\n"
+            "   \"tickets\": [\"value\",...], (array of string) Tickets owned by the specified address.\n"
+            "}\n" 
+            "\nExamples:\n"
+            + HelpExampleCli("ticketsforaddress", "\"address\"")
+            + HelpExampleRpc("ticketsforaddress", "\"address\"")
+        };
+
+    return UniValue(UniValue::VOBJ);
+}
+
+UniValue ticketvwap(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() > 2) 
+        throw std::runtime_error{
+            "ticketvwap (start end)\n"
+            "\nCalculate the volume weighted average price of tickets for a range of blocks (default: full PoS difficulty adjustment depth)\n"
+            "\nArguments:\n"
+            "1. start (numeric, optional) The start height to begin calculating the VWAP from\n"
+            "2. end   (numeric, optional) The end height to begin calculating the VWAP from\n"
+            "\nResult:\n"
+            "   n.nnn (numeric) The volume weighted average price\n"
+            "\nExamples:\n"
+            + HelpExampleCli("ticketvwap", "10 20")
+            + HelpExampleRpc("ticketvwap", "10 20")
         };
 
     return ValueFromAmount(0);
@@ -1082,6 +1198,11 @@ static const CRPCCommand commands[] =
     { "mining",             "existsmissedtickets",    &existsmissedtickets,    {"txhashblob"} },
     { "mining",             "existslivetickets",      &existslivetickets,      {"txhashblob"} },
     { "mining",             "getticketpoolvalue",     &getticketpoolvalue,     {} },
+    { "mining",             "livetickets",            &livetickets,            {} },
+    { "mining",             "missedtickets",          &missedtickets,          {} },
+    { "mining",             "ticketfeeinfo",          &ticketfeeinfo,          {"blocks","windows"} },
+    { "mining",             "ticketsforaddress",      &ticketsforaddress,      {"address"} },
+    { "mining",             "ticketvwap",             &ticketvwap,             {"start","stop"} },
 
     { "generating",         "generatetoaddress",      &generatetoaddress,      {"nblocks","address","maxtries"} },
 
