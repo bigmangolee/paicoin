@@ -863,7 +863,7 @@ UniValue getticketpoolvalue(const JSONRPCRequest& request)
             + HelpExampleRpc("getticketpoolvalue", "")
         };
 
-    return UniValue(UniValue::VNUM);
+    return ValueFromAmount(0);
 }
 
 UniValue estimatefee(const JSONRPCRequest& request)
