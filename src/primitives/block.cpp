@@ -12,7 +12,9 @@
 
 uint256 CBlockHeader::GetHash() const
 {
-    return SerializeHash<CBlockHashWriter>(*this);
+    return SerializeHash<CHashWriter>(*this);
+    // TODO: use CBlockHashWriter as template argument and regenerate the GENESIS BLOCK
+    // return SerializeHash<CBlockHashWriter>(*this);
 }
 
 std::string CBlock::ToString() const

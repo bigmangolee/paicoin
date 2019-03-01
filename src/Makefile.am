@@ -291,6 +291,10 @@ libpaicoin_consensus_a_SOURCES = \
   consensus/merkle.h \
   consensus/params.h \
   consensus/validation.h \
+  stake/hash256prng.cpp \
+  stake/hash256prng.h \
+  stake/hasher.cpp \
+  stake/hasher.h \
   hash.cpp \
   hash.h \
   prevector.h \

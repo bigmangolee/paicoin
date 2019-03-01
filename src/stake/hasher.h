@@ -1,7 +1,9 @@
 #ifndef PAICOIN_STAKE_HASHER_H
 #define PAICOIN_STAKE_HASHER_H
 
+extern "C" {
 #include "crypto/tiny_sha3.h"
+}
 #include "uint256.h"
 
 
